@@ -430,7 +430,8 @@ async def format_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("720p HD", callback_data="q_720")],
             [InlineKeyboardButton("1080p FHD", callback_data="q_1080")],
             [InlineKeyboardButton("2K QHD", callback_data="q_1440")],
-            [if q.data == "format_audio":
+            [
+    if q.data == "format_audio":
     await q.message.edit_text("🎵 تم اختيار الصوت... جاري التحميل ⏬")
     
     url = context.user_data.get("link")
@@ -454,7 +455,7 @@ async def format_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'keepvideo': False,
         }
         
-        if not os.path.exists('downloads'):
+    if not os.path.exists('downloads'):
             os.makedirs('downloads')
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
