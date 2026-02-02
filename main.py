@@ -10,7 +10,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, Cal
 import yt_dlp
 
 import os
-BOT_TOKEN = os.environ.get("8375264634:AAEyW3-cYr3hCy8WeM6GdUf9il2LL_EAIOw", "8375264634:AAEyW3-cYr3hCy8WeM6GdUf9il2LL_EAIOw")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "التوكن_هنا")
 OWNER_ID = 6413050201
 CREATER_USERNAME = "@Y_U_OMVR"
 USER_COOLDOWN = 8
