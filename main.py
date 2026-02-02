@@ -421,21 +421,33 @@ async def format_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     # إذا اختار الصوت
-    if q.data == "format_audio":
-        # إضافة مؤشر أن المستخدم ينتظر
-        await q.message.edit_text("🎵 تم اختيار الصوت... جاري التحميل ⏬")
+ if q.data == "format_audio":
+    # إضافة مؤشر أن المستخدم ينتظر
+    await q.message.edit_text("تم اختيار الصوت... جاري التحميل ❤️")
+    
+    # تحميل الصوت مباشرة
+    url = context.user_data.get("link")
+    if not url:
+        await q.message.reply_text("❌ مفيش لينك للتحميل!")
+        return
+
+    try:
+        await q.message.edit_text("جاري تحميل الصوت...")
         
-        # تحميل الصوت مباشرة
-        url = context.user_data.get("link")
-        if not url:
-            await q.message.reply_text("❌ مفيش لينك للتحميل!")
-            return
+        # إعدادات تحميل الصوت
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': 'downloads/%(title)s.%(ext)s',
+            'quiet': True,
+            'no_warnings': True,
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+        }
         
-        try:
-            await q.message.edit_text("⏬ جاري تحميل الصوت...")
-            
-            # إعدادات تحميل الصوت
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'outtmpl': 'downloads/%(title)s.%(ext)s',
-                'quiet': True,
+        # أكمل باقي كود التحميل هنا...
+        
+    except Exception as e:
+        await q.message.edit_text(f"❌ حصل خطأ: {e}")
