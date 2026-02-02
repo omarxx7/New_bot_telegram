@@ -430,8 +430,11 @@ async def format_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("720p HD", callback_data="q_720")],
             [InlineKeyboardButton("1080p FHD", callback_data="q_1080")],
             [InlineKeyboardButton("2K QHD", callback_data="q_1440")],
-            [
-    if q.data == "format_audio":
+            [InlineKeyboardButton("4K UHD", callback_data="q_2160")],
+            [InlineKeyboardButton("8K 🔥", callback_data="q_4320")]
+      ]
+
+        if q.data == "format_audio":
     await q.message.edit_text("🎵 تم اختيار الصوت... جاري التحميل ⏬")
     
     url = context.user_data.get("link")
@@ -455,7 +458,7 @@ async def format_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
             'keepvideo': False,
         }
         
-    if not os.path.exists('downloads'):
+        if not os.path.exists('downloads'):
             os.makedirs('downloads')
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -487,9 +490,7 @@ async def format_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
     except Exception as e:
         print(f"Error downloading audio: {e}")
-        await q.message.edit_text(f"❌ حصل خطأ في تحميل الصوت:\n{str(e)}")InlineKeyboardButton("4K UHD", callback_data="q_2160")],
-            [InlineKeyboardButton("8K 🔥", callback_data="q_4320")]
-        ]
+        await q.message.edit_text(f"❌ حصل خطأ في تحميل الصوت:\n{str(e)}")
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         await q.message.edit_text("🎯 اختر الجودة المناسبة:", reply_markup=reply_markup)
