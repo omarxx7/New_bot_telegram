@@ -485,3 +485,101 @@ async def format_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         await q.message.edit_text("🎯 اختر الجودة المناسبة:", reply_markup=reply_markup)
+
+async def quality_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    await q.answer()
+    user_id = q.from_user.id
+    
+    if not await check_subscription(context.bot, user_id):
+        await q.message.reply_text("⚠️ لازم تشترك في القنوات الأول!")
+        return
+    
+    quality = q.data.replace("q_", "")
+    url = context.user_data.get("link")
+    
+    if not url:
+        await q.message.edit_text("❌ مفيش لينك للتحميل!")
+        return
+    
+    try:
+        await q.message.edit_text(f"⏬ جاري تحميل الفيديو بجودة {quality}p...")
+        
+        quality_map = {
+            '144': 'best[height<=144]',
+            '240': 'best[height<=240]',
+            '360': 'best[height<=360]',
+            '480': 'best[height<=480]',
+            '720': 'best[height<=720]',
+            '1080': 'best[height<=1080]',
+            '1440': 'best[height<=1440]',
+            '2160': 'best[height<=2160]',
+            '4320': 'best[height<=4320]'
+        }
+        
+        format_string = quality_map.get(quality, 'best')
+        
+        ydl_opts = {
+            'format': format_string,
+            'outtmpl': 'downloads/%(title)s.%(ext)s',
+            'quiet': True,
+            'no_warnings': True,
+        }
+        
+        if not os.path.exists('downloads'):
+            os.makedirs('downloads')
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            file_path = ydl.prepare_filename(info)
+            
+            await q.message.edit_text("📤 جاري إرسال الفيديو...")
+            
+            file_size = os.path.getsize(file_path)
+            if file_size > 50 * 1024 * 1024:
+                await q.message.edit_text("❌ حجم الفيديو كبير جداً (أكثر من 50MB) ولا يمكن إرساله على تليجرام.")
+            else:
+                with open(file_path, 'rb') as video_file:
+                    await context.bot.send_video(
+                        chat_id=user_id,
+                        video=video_file,
+                        caption=f"🎬 {info.get('title', 'تم التحميل')}\n\n📁 المطور: {CREATER_USERNAME}"
+                    )
+            
+            try:
+                os.remove(file_path)
+            except:
+                pass
+            
+            await q.message.edit_text("✅ تم تحميل الفيديو بنجاح!")
+            
+    except Exception as e:
+        print(f"Error downloading video: {e}")
+        await q.message.edit_text(f"❌ حصل خطأ في تحميل الفيديو:\n{str(e)}")
+
+def main():
+    print("🚀 بدء تشغيل البوت...")
+    print(f"🔑 التوكن: {'موجود' if BOT_TOKEN else 'ناقص'}")
+    
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
+    
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("panel", panel))
+    application.add_handler(CommandHandler("search", search))
+    
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
+    
+    application.add_handler(CallbackQueryHandler(panel_callbacks, pattern="^panel_"))
+    application.add_handler(CallbackQueryHandler(remove_channel_callback, pattern="^remove_ch_"))
+    application.add_handler(CallbackQueryHandler(check_subscription_callback, pattern="^check_sub$"))
+    application.add_handler(CallbackQueryHandler(search_select, pattern="^vid_"))
+    application.add_handler(CallbackQueryHandler(format_choice, pattern="^format_"))
+    application.add_handler(CallbackQueryHandler(quality_choice, pattern="^q_"))
+    
+    print("✅ تم تحميل جميع handlers")
+    print("🤖 البوت شغال...")
+    
+    application.run_polling()
+
+if __name__ == "__main__":
+    main()
