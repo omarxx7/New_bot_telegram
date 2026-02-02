@@ -419,9 +419,65 @@ async def format_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.message.reply_text("⚠️ لازم تشترك في القنوات الأول!")
         return
     
+    if q.data == "format_audio":
+        await q.message.edit_text("🎵 تم اختيار الصوت... جاري التحميل ⏬")
+        
+        url = context.user_data.get("link")
+        if not url:
+            await q.message.reply_text("❌ مفيش لينك للتحميل!")
+            return
+        
+        try:
+            await q.message.edit_text("⏬ جاري تحميل الصوت...")
+            
+            # إعدادات لتحميل الصوت بدون ffmpeg
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'outtmpl': 'downloads/%(title)s.%(ext)s',
+                'quiet': True,
+                'no_warnings': True,
+                'extract_audio': True,      # لاستخراج الصوت
+                'audio_format': 'mp3',      # محاولة الحصول على mp3
+                'keepvideo': False,         # لا تحتفظ بالفيديو
+                # لا تستخدم postprocessors لأنها تحتاج ffmpeg
+            }
+            
+            if not os.path.exists('downloads'):
+                os.makedirs('downloads')
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+                file_path = ydl.prepare_filename(info)
+                
+                # تغيير الامتداد إلى mp3 إذا كان مختلفاً
+                if file_path.endswith(('.webm', '.m4a', '.opus')):
+                    new_path = file_path.rsplit('.', 1)[0] + '.mp3'
+                    os.rename(file_path, new_path)
+                    file_path = new_path
+                
+                await q.message.edit_text("📤 جاري إرسال الصوت...")
+                
+                # إرسال الملف
+                with open(file_path, 'rb') as audio_file:
+                    await context.bot.send_audio(
+                        chat_id=user_id,
+                        audio=audio_file,
+                        caption=f"🎵 {info.get('title', 'تم التحميل')}\n\n📁 المطور: {CREATER_USERNAME}"
+                    )
+                
+                # حذف الملف بعد الإرسال
+                try:
+                    os.remove(file_path)
+                except:
+                    pass
+                
+                await q.message.edit_text("✅ تم تحميل الصوت بنجاح!")
+                
+        except Exception as e:
+            print(f"Error downloading audio: {e}")
+            await q.message.edit_text(f"❌ حصل خطأ في تحميل الصوت:\n{str(e)}")
     
-    
-    else:
+    else:  # format_video
         keyboard = [
             [InlineKeyboardButton("144p", callback_data="q_144")],
             [InlineKeyboardButton("240p", callback_data="q_240")],
@@ -432,65 +488,7 @@ async def format_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("2K QHD", callback_data="q_1440")],
             [InlineKeyboardButton("4K UHD", callback_data="q_2160")],
             [InlineKeyboardButton("8K 🔥", callback_data="q_4320")]
-      ]
-
-        if q.data == "format_audio":
-    await q.message.edit_text("🎵 تم اختيار الصوت... جاري التحميل ⏬")
-    
-    url = context.user_data.get("link")
-    if not url:
-        await q.message.reply_text("❌ مفيش لينك للتحميل!")
-        return
-    
-    try:
-        await q.message.edit_text("⏬ جاري تحميل الصوت...")
-        
-        # إعدادات لتحميل أفضل صيغة صوتية (بدون تحويل)
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': 'downloads/%(title)s.%(ext)s',
-            'quiet': True,
-            'no_warnings': True,
-            # تجنب استخدام postprocessors التي تحتاج ffmpeg
-            # استخدم extract_audio إذا كان الملف أصلاً بصيغة صوتية
-            'extract_audio': True,
-            'audio_format': 'mp3',
-            'keepvideo': False,
-        }
-        
-        if not os.path.exists('downloads'):
-            os.makedirs('downloads')
-        
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            file_path = ydl.prepare_filename(info)
-            
-            # تغيير الامتداد إذا كان لا يزال بصيغة فيديو
-            if file_path.endswith(('.webm', '.m4a', '.opus')):
-                new_path = file_path.rsplit('.', 1)[0] + '.mp3'
-                os.rename(file_path, new_path)
-                file_path = new_path
-            
-            await q.message.edit_text("📤 جاري إرسال الصوت...")
-            
-            # إرسال الملف كما هو (حتى لو كان m4a أو opus)
-            with open(file_path, 'rb') as audio_file:
-                await context.bot.send_audio(
-                    chat_id=user_id,
-                    audio=audio_file,
-                    caption=f"🎵 {info.get('title', 'تم التحميل')}\n\n📁 المطور: {CREATER_USERNAME}"
-                )
-            
-            try:
-                os.remove(file_path)
-            except:
-                pass
-            
-            await q.message.edit_text("✅ تم تحميل الصوت بنجاح!")
-            
-    except Exception as e:
-        print(f"Error downloading audio: {e}")
-        await q.message.edit_text(f"❌ حصل خطأ في تحميل الصوت:\n{str(e)}")
+        ]
         
         reply_markup = InlineKeyboardMarkup(keyboard)
         await q.message.edit_text("🎯 اختر الجودة المناسبة:", reply_markup=reply_markup)
